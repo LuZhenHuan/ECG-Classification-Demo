@@ -18,19 +18,14 @@ function DataLoader:__init(kwargs)
   self.y_splits = {}
   self.split_sizes = {}
   for split, v in pairs(splits) do
-    local num = v:nElement()
-    local extra = num % (N * T)
-
-    -- Ensure that `vy` is non-empty
-    if extra == 0 then
-      extra = N * T
-    end
-
+    
     -- Chop out the extra bits at the end to make it evenly divide
     local vx = v[{{1, num - extra}}]:view(N, -1, T):transpose(1, 2):clone()
     local vy = v[{{2, num - extra + 1}}]:view(N, -1, T):transpose(1, 2):clone()
-
-    self.x_splits[split] = vx
+    
+	local vx = v[{{1, num - extra}}]:view(N, -1, T):transpose(1, 2):clone()
+    
+	self.x_splits[split] = vx
     self.y_splits[split] = vy
     self.split_sizes[split] = vx:size(1)
   end
