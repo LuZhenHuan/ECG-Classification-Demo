@@ -7,7 +7,7 @@ local EM, parent = torch.class('nn.EcgModel', 'nn.Module')
 
 function EM:__init(input_dim, hidden_dim ,output_dim)
   
-  local V, H ,Y= input_dim, hidden_dim ,output_dim                                  --input size, rnn_size, label size
+  local V, H ,Y= input_dim, hidden_dim ,output_dim      --input size, rnn_size, label size
 
   self.net = nn.Sequential()
   self.rnns = {}
