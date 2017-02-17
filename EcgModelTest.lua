@@ -52,7 +52,7 @@ end
 --loss function 
 local function f(w)
   
-  --grad_params:zero()
+  grad_params:zero()
   --data_process()
   x,y = next_batch()
     
@@ -69,7 +69,7 @@ end
 optim_config = {learningRate = 0.01}
 model:training()
 
-for i = 1 ,20 do
+for i = 1 ,20000 do
 
 	if i%4~=0 then
 		x,y = next_batch()
@@ -79,9 +79,9 @@ for i = 1 ,20 do
 		print(loss)
 		data_process()
 
-		--model:resetStates()
+		model:resetStates()
 
-	--end
+	end
 	
 end
 
