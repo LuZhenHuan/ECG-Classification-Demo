@@ -18,11 +18,11 @@ count = 1
 flag  = 1
 params, grad_params = model:getParameters()
 
-
+trainset = torch.load('RnnTrain.t7')
 --load and process data
 function data_process()
 
-	trainset = torch.load('RnnTrain.t7')
+	
 	xTemp = trainset[count]:view(4,-1,T)
 	count = count + 1
 
@@ -33,7 +33,8 @@ function data_process()
 	end
 end
 
---读取下一个batch
+data_process()
+--load a batch
 function next_batch()
 	
 	
