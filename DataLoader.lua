@@ -7,11 +7,6 @@ local DataLoader = torch.class('DataLoader')
 
 
 function DataLoader:__init(kwargs)
-  
-  trainData = torch.load('RnnTrain.t7')
-  testData = torch.load('RnnTest.t7')
-  
-  
   local h5_file = utils.get_kwarg(kwargs, 'input_h5')
   self.batch_size = utils.get_kwarg(kwargs, 'batch_size')
   self.seq_length = utils.get_kwarg(kwargs, 'seq_length')
@@ -28,14 +23,19 @@ function DataLoader:__init(kwargs)
   self.y_splits = {}
   self.split_sizes = {}
   for split, v in pairs(splits) do
-    
+    local num = v:nElement()
+    local extra = num % (N * T)
+
+    -- Ensure that `vy` is non-empty
+    if extra == 0 then
+      extra = N * T
+    end
+
     -- Chop out the extra bits at the end to make it evenly divide
     local vx = v[{{1, num - extra}}]:view(N, -1, T):transpose(1, 2):clone()
     local vy = v[{{2, num - extra + 1}}]:view(N, -1, T):transpose(1, 2):clone()
-    
-	local vx = v[{{1, num - extra}}]:view(N, -1, T):transpose(1, 2):clone()
-    
-	self.x_splits[split] = vx
+
+    self.x_splits[split] = vx
     self.y_splits[split] = vy
     self.split_sizes[split] = vx:size(1)
   end
