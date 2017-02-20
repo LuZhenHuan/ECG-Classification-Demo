@@ -16,6 +16,10 @@ crit = nn.MSECriterion():type(dtype)
 N, T = 1, 100		--opt.batch_size, opt.seq_length	
 count = 1
 flag  = 1
+epoch = 10
+max_epochs = 10
+train_loss_history = {}
+
 params, grad_params = model:getParameters()
 
 trainset = torch.load('RnnTrain.t7')
@@ -31,9 +35,12 @@ function data_process()
 	else
 		y = torch.Tensor{1}:view(1,1,1)
 	end
+	
+	if count == 110501 then
+		count = 1
+	end
 end
 
-data_process()
 --load a batch
 function next_batch()
 	
@@ -52,6 +59,7 @@ end
 --loss function 
 local function f(w)
   
+  assert(w == params)
   grad_params:zero()
   --data_process()
   x,y = next_batch()
@@ -66,21 +74,31 @@ end
 
 
 -- Train the model!
+
+num_train = 110500 * 4
+num_iterations = epoch * num_train
+
+
 optim_config = {learningRate = 0.01}
 model:training()
 
-for i = 1 ,20000 do
+for i = 1 , num_iterations do
 
 	if i%4~=0 then
 		x,y = next_batch()
 		model:forward(x)
 	else
 		_, loss = optim.adam(f, params, optim_config)
-		print(loss)
+		table.insert(train_loss_history, loss[1])
+		--print(loss)
 		data_process()
 
 		model:resetStates()
 
+		local float_epoch = i / num_train + 1
+    	local msg = 'Epoch %.2f / %d, i = %d / %d, loss = %f'
+    	local args = {msg, float_epoch, max_epochs, i, num_iterations, loss[1]}
+    	print(string.format(unpack(args)))
 	end
 	
 end
