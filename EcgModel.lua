@@ -18,7 +18,7 @@ function EM:__init(input_dim, hidden_dim ,output_dim)
   table.insert(self.rnns, rnn)
   self.net:add(rnn)
 
-	self.view1 = nn.View(1, 1, -1):setNumInputDims(3)     --限定输入，方便batch，具体用法看有道笔记
+	self.view1 = nn.View(1, 1, -1):setNumInputDims(3)     
 	self.view2 = nn.View(1, -1):setNumInputDims(2)
 
 	self.net:add(self.view1)

@@ -2,22 +2,23 @@ require 'torch'
 require 'nn'
 require 'gnuplot'
 require 'optim'
+require 'cutorch'
+require 'cunn'
 require 'VanillaRNN' 
 require 'EcgModel'
 
 
-dtype = 'torch.FloatTensor'
+dtype = 'torch.CudaTensor'
 --build a simple rnn 100 -> 100 -> 1
-model = nn.EcgModel(100,100,1):type(dtype)
+model = nn.EcgModel(400,100,1):type(dtype)
 crit = nn.MSECriterion():type(dtype)
 
 --Set up some variables we will use below
 
-N, T = 1, 100		--opt.batch_size, opt.seq_length	
+N, T = 1, 400		--opt.batch_size, opt.seq_length	
 count = 1
 flag  = 1
-epoch = 1
-max_epochs = 50
+max_epochs = 1
 train_loss_history = {}
 
 params, grad_params = model:getParameters()
@@ -27,7 +28,7 @@ trainset = torch.load('RnnTrain.t7')
 function data_process(dataset)
 
 	
-	xTemp = dataset[count]:view(4,-1,T)
+	xTemp = dataset[count]:view(1,-1,T)
 	count = count + 1
 
 	if count <= 50250 then
@@ -40,16 +41,13 @@ function data_process(dataset)
 		count = 1
 	end
 end
-data_process(trainset)
+
 
 --load a batch
 function next_batch()
 	
-	x = xTemp[flag]:view(1,-1,100)
-	flag = flag + 1
-	if flag == 4 then
-		flag = 1
-	end
+	x = xTemp[1]:view(1,-1,100)
+	
 	x, y = x:type(dtype), y:type(dtype)
 
 	return x,y
@@ -82,7 +80,7 @@ optim_config = {learningRate = 0.01}
 model:training()
 
 for i = 1 , num_iterations do
-
+	data_process(trainset)
 	if i%4~=0 then
 		x,y = next_batch()
 		model:forward(x)
@@ -90,7 +88,7 @@ for i = 1 , num_iterations do
 		_, loss = optim.adam(f, params, optim_config)
 		--table.insert(train_loss_history, loss[1])
 		--print(loss)
-		data_process(trainset)
+		
 
 		model:resetStates()
 
@@ -111,7 +109,7 @@ erTemp = 0
 plota = torch.Tensor(30000) 
 data_process(testset)
 model:resetStates()
-for i = 1 , 120000 do
+for i = 1 , 152000 do
 
 	x,y = next_batch()
 	a = model:forward(x):view(1)
