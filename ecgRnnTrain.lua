@@ -5,11 +5,83 @@ require 'optim'
 require 'VanillaRNN' 
 require 'EcgModel'
 
+local utils = require 'util.utils'
+local unpack = unpack or table.unpack
 
-dtype = 'torch.FloatTensor'
---build a simple rnn 100 -> 100 -> 1
-model = nn.EcgModel(100,100,1):type(dtype)
-crit = nn.MSECriterion():type(dtype)
+local cmd = torch.CmdLine()
+
+-- Dataset options
+cmd:option('-input_data', 'data/RnnTrain.t7')
+cmd:option('-batch_size', 50)
+cmd:option('-seq_length', 50)
+
+-- Model options
+cmd:option('-init_from', '')
+cmd:option('-reset_iterations', 1)
+cmd:option('-model_type', 'rnn')
+cmd:option('-input_size', 64)
+cmd:option('-rnn_size', 128)
+cmd:option('-num_layers', 2)
+cmd:option('-dropout', 0)
+cmd:option('-batchnorm', 0)
+
+-- Optimization options
+cmd:option('-max_epochs', 50)
+cmd:option('-learning_rate', 2e-3)
+cmd:option('-grad_clip', 5)
+cmd:option('-lr_decay_every', 5)
+cmd:option('-lr_decay_factor', 0.5)
+
+-- Output options
+cmd:option('-print_every', 1)
+cmd:option('-checkpoint_every', 1000)
+cmd:option('-checkpoint_name', 'cv/checkpoint')
+
+-- Benchmark options
+cmd:option('-speed_benchmark', 0)
+cmd:option('-memory_benchmark', 0)
+
+-- Backend options
+cmd:option('-gpu', 0)
+cmd:option('-gpu_backend', 'cuda')
+
+local opt = cmd:parse(arg)
+
+-- Set up GPU stuff
+local dtype = 'torch.FloatTensor'
+if opt.gpu >= 0 and opt.gpu_backend == 'cuda' then
+  require 'cutorch'
+  require 'cunn'
+  cutorch.setDevice(opt.gpu + 1)
+  dtype = 'torch.CudaTensor'
+  print(string.format('Running with CUDA on GPU %d', opt.gpu))
+else
+  -- Memory benchmarking is only supported in CUDA mode
+  opt.memory_benchmark = 0
+  print 'Running in CPU mode'
+end
+
+-- Initialize the DataLoader and vocabulary
+local loader = DataLoader(opt)
+
+-- Initialize the model and criterion
+local opt_clone = torch.deserialize(torch.serialize(opt))
+
+local model = nil
+local start_i = 0
+if opt.init_from ~= '' then
+  print('Initializing from ', opt.init_from)
+  local checkpoint = torch.load(opt.init_from)
+  model = checkpoint.model:type(dtype)
+  if opt.reset_iterations == 0 then
+    start_i = checkpoint.i
+  end
+else
+  model = nn.EcgModel(opt_clone):type(dtype)
+end
+local params, grad_params = model:getParameters()
+local crit = nn.CrossEntropyCriterion():type(dtype)
+
 
 --Set up some variables we will use below
 
