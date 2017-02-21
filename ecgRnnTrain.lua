@@ -17,7 +17,7 @@ N, T = 1, 100		--opt.batch_size, opt.seq_length
 count = 1
 flag  = 1
 epoch = 1
-max_epochs = 50
+max_epochs = 1 
 train_loss_history = {}
 
 params, grad_params = model:getParameters()
@@ -92,7 +92,7 @@ for i = 1 , num_iterations do
 		--print(loss)
 		data_process(trainset)
 
-		model:resetStates()
+	--	model:resetStates()
 
 		local float_epoch = i / num_train + 1
     	local msg = 'Epoch %.2f / %d, i = %d / %d, loss = %f'
