@@ -1,5 +1,5 @@
 require 'torch'
-require 'hdf5'
+ 
 
 local utils = require 'util.utils'
 
@@ -7,17 +7,19 @@ local DataLoader = torch.class('DataLoader')
 
 
 function DataLoader:__init(kwargs)
-  local h5_file = utils.get_kwarg(kwargs, 'input_h5')
+  local trainset = torch.load('RnnTrain1Dcut.t7')
+  local valset = torch.load('RnnVal1Dcut.t7')
+  local testset = torch.load('RnnTest1D.t7')
+
   self.batch_size = utils.get_kwarg(kwargs, 'batch_size')
   self.seq_length = utils.get_kwarg(kwargs, 'seq_length')
   local N, T = self.batch_size, self.seq_length
 
   -- Just slurp all the data into memory
   local splits = {}
-  local f = hdf5.open(h5_file, 'r')
-  splits.train = f:read('/train'):all()
-  splits.val = f:read('/val'):all()
-  splits.test = f:read('/test'):all()
+  splits.train = trainset
+  splits.val = valset
+  splits.test = testset
 
   self.x_splits = {}
   self.y_splits = {}

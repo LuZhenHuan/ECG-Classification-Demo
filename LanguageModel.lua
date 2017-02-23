@@ -11,13 +11,6 @@ local LM, parent = torch.class('nn.LanguageModel', 'nn.Module')
 
 
 function LM:__init(kwargs)
-  self.idx_to_token = utils.get_kwarg(kwargs, 'idx_to_token')
-  self.token_to_idx = {}
-  self.vocab_size = 0
-  for idx, token in pairs(self.idx_to_token) do
-    self.token_to_idx[token] = idx
-    self.vocab_size = self.vocab_size + 1
-  end
 
   self.model_type = utils.get_kwarg(kwargs, 'model_type')
   self.wordvec_dim = utils.get_kwarg(kwargs, 'wordvec_size')
@@ -26,14 +19,13 @@ function LM:__init(kwargs)
   self.dropout = utils.get_kwarg(kwargs, 'dropout')
   self.batchnorm = utils.get_kwarg(kwargs, 'batchnorm')
 
-  local V, D, H = self.vocab_size, self.wordvec_dim, self.rnn_size
+  local  D, H = self.wordvec_dim, self.rnn_size
 
   self.net = nn.Sequential()
   self.rnns = {}
   self.bn_view_in = {}
   self.bn_view_out = {}
 
-  self.net:add(nn.LookupTable(V, D))
   for i = 1, self.num_layers do
     local prev_dim = H
     if i == 1 then prev_dim = D end

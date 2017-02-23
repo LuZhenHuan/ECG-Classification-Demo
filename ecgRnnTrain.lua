@@ -2,8 +2,9 @@ require 'torch'
 require 'nn'
 require 'gnuplot'
 require 'optim'
-require 'VanillaRNN' 
+
 require 'EcgModel'
+require 'util.DataLoader'
 
 local utils = require 'util.utils'
 local unpack = unpack or table.unpack
@@ -11,9 +12,8 @@ local unpack = unpack or table.unpack
 local cmd = torch.CmdLine()
 
 -- Dataset options
-cmd:option('-input_data', 'data/RnnTrain.t7')
 cmd:option('-batch_size', 50)
-cmd:option('-seq_length', 50)
+cmd:option('-seq_length', 1000)
 
 -- Model options
 cmd:option('-init_from', '')
@@ -77,7 +77,9 @@ if opt.init_from ~= '' then
     start_i = checkpoint.i
   end
 else
+print(opt_clone)
   model = nn.EcgModel(opt_clone):type(dtype)
+print 'there'
 end
 local params, grad_params = model:getParameters()
 local crit = nn.CrossEntropyCriterion():type(dtype)

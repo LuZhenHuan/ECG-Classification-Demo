@@ -1,32 +1,30 @@
 require 'torch'
- 
+require 'hdf5'
 
-local utils = require 'util.utils'
+utils = require 'util.utils'
 
-local DataLoader = torch.class('DataLoader')
+DataLoader = torch.class('DataLoader')
 
 
 function DataLoader:__init(kwargs)
-  local trainset = torch.load('RnnTrain1Dcut.t7')
-  local valset = torch.load('RnnVal1Dcut.t7')
-  local testset = torch.load('RnnTest1D.t7')
-
+  h5_file = utils.get_kwarg(kwargs, 'input_h5')
   self.batch_size = utils.get_kwarg(kwargs, 'batch_size')
   self.seq_length = utils.get_kwarg(kwargs, 'seq_length')
-  local N, T = self.batch_size, self.seq_length
+  N, T = self.batch_size, self.seq_length
 
   -- Just slurp all the data into memory
-  local splits = {}
-  splits.train = trainset
-  splits.val = valset
-  splits.test = testset
+  splits = {}
+  f = hdf5.open(h5_file, 'r')
+  splits.train = f:read('/train'):all()
+  splits.val = f:read('/val'):all()
+  splits.test = f:read('/test'):all()
 
   self.x_splits = {}
   self.y_splits = {}
   self.split_sizes = {}
   for split, v in pairs(splits) do
-    local num = v:nElement()
-    local extra = num % (N * T)
+    num = v:nElement()
+    extra = num % (N * T)
 
     -- Ensure that `vy` is non-empty
     if extra == 0 then
@@ -34,8 +32,8 @@ function DataLoader:__init(kwargs)
     end
 
     -- Chop out the extra bits at the end to make it evenly divide
-    local vx = v[{{1, num - extra}}]:view(N, -1, T):transpose(1, 2):clone()
-    local vy = v[{{2, num - extra + 1}}]:view(N, -1, T):transpose(1, 2):clone()
+    vx = v[{{1, num - extra}}]:view(N, -1, T):transpose(1, 2):clone()
+    vy = v[{{2, num - extra + 1}}]:view(N, -1, T):transpose(1, 2):clone()
 
     self.x_splits[split] = vx
     self.y_splits[split] = vy
@@ -47,10 +45,10 @@ end
 
 
 function DataLoader:nextBatch(split)
-  local idx = self.split_idxs[split]
+  idx = self.split_idxs[split]
   assert(idx, 'invalid split ' .. split)
-  local x = self.x_splits[split][idx]
-  local y = self.y_splits[split][idx]
+  x = self.x_splits[split][idx]
+  y = self.y_splits[split][idx]
   if idx == self.split_sizes[split] then
     self.split_idxs[split] = 1
   else
