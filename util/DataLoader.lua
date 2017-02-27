@@ -9,7 +9,7 @@ local DataLoader = torch.class('DataLoader')
 function DataLoader:__init(kwargs)
   local trainset = torch.load('RnnTrain1Dcut.t7')
   local valset = torch.load('RnnVal1Dcut.t7')
-  local testset = torch.load('RnnTest1D.t7')
+  local testset = torch.load('RnnTest.t7'):view(-1)
 
   self.batch_size = utils.get_kwarg(kwargs, 'batch_size')
   self.seq_length = utils.get_kwarg(kwargs, 'seq_length')
@@ -56,6 +56,7 @@ function DataLoader:nextBatch(split)
   else
     self.split_idxs[split] = idx + 1
   end
+  x = x:view(1,50,100)
   return x, y
 end
 

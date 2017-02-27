@@ -13,15 +13,15 @@ local cmd = torch.CmdLine()
 
 -- Dataset options
 cmd:option('-batch_size', 50)
-cmd:option('-seq_length', 1000)
+cmd:option('-seq_length', 100)
 
 -- Model options
 cmd:option('-init_from', '')
 cmd:option('-reset_iterations', 1)
 cmd:option('-model_type', 'rnn')
-cmd:option('-input_size', 64)
-cmd:option('-rnn_size', 128)
-cmd:option('-num_layers', 2)
+cmd:option('-input_size', 100)
+cmd:option('-rnn_size', 100)
+cmd:option('-num_layers', 1)
 cmd:option('-dropout', 0)
 cmd:option('-batchnorm', 0)
 
@@ -42,7 +42,7 @@ cmd:option('-speed_benchmark', 0)
 cmd:option('-memory_benchmark', 0)
 
 -- Backend options
-cmd:option('-gpu', 0)
+cmd:option('-gpu', -1)
 cmd:option('-gpu_backend', 'cuda')
 
 local opt = cmd:parse(arg)
@@ -77,12 +77,10 @@ if opt.init_from ~= '' then
     start_i = checkpoint.i
   end
 else
-print(opt_clone)
   model = nn.EcgModel(opt_clone):type(dtype)
-print 'there'
 end
 local params, grad_params = model:getParameters()
-local crit = nn.CrossEntropyCriterion():type(dtype)
+local crit = nn.MSECriterion():type(dtype)
 
 
 -- Set up some variables we will use below
@@ -114,7 +112,6 @@ local function f(w)
     timer = torch.Timer()
   end
   local scores = model:forward(x)
-  
   -- Use the Criterion to compute loss; we need to reshape the scores to be
   -- two-dimensional before doing so. Annoying.
   local scores_view = scores:view(N * T, -1)
@@ -231,81 +228,3 @@ for i = start_i + 1, num_iterations do
     collectgarbage()
   end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- Train the model!
-
-num_train = 110500 * 4
-num_iterations = max_epochs * num_train
-
-optim_config = {learningRate = 0.01}
-model:training()
-
-for i = 1 , num_iterations do
-
-	if i%4~=0 then
-		x,y = next_batch()
-		model:forward(x)
-	else
-		_, loss = optim.adam(f, params, optim_config)
-		--table.insert(train_loss_history, loss[1])
-		--print(loss)
-		data_process(trainset)
-
-	--	model:resetStates()
-
-		local float_epoch = i / num_train + 1
-    	local msg = 'Epoch %.2f / %d, i = %d / %d, loss = %f'
-    	local args = {msg, float_epoch, max_epochs, i, num_iterations, loss[1]}
-    	print(string.format(unpack(args)))
-	end
-	
-end
-
---let's test the model
-result = 0
-testset = torch.load('RnnTest.t7')
-count = 1
-flag = 1
-erTemp = 0
-plota = torch.Tensor(30000) 
-data_process(testset)
-model:resetStates()
-for i = 1 , 120000 do
-
-	x,y = next_batch()
-	a = model:forward(x):view(1)
-	if i%4 == 0 then
-		plota[i/4]= a[1]
-
-		model:resetStates()
-		if i <= 78000 and a[1]>0.5 then erTemp = erTemp + 1
-		elseif i > 78000 and a[1]<0.5 then erTemp = erTemp + 1
-		end
-		data_process(testset)
-	end
-end
-gnuplot.plot(plota)
-print(erTemp)
-

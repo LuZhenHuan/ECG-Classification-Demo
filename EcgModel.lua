@@ -17,7 +17,7 @@ function EM:__init(kwargs)
   self.num_layers = utils.get_kwarg(kwargs, 'num_layers')
   self.dropout = utils.get_kwarg(kwargs, 'dropout')
   self.batchnorm = utils.get_kwarg(kwargs, 'batchnorm')
-
+ 
   local D, H = self.input_dim, self.rnn_size
 
   self.net = nn.Sequential()
@@ -36,7 +36,9 @@ function EM:__init(kwargs)
     end
     rnn.rember_states = true
     table.insert(self.rnns, rnn)
+
     self.net:add(rnn)
+
     if self.batchnorm == 1 then
       local view_in = nn.View(1, 1, -1):setNumInputDims(3)
       table.insert(self.bn_view_in, view_in)
@@ -46,9 +48,11 @@ function EM:__init(kwargs)
       table.insert(self.bn_view_out, view_out)
       self.net:add(view_out)
     end
+
     if self.dropout > 0 then
       self.net:add(nn.Dropout(self.dropout))
     end
+
   end
 
   -- After all the RNNs run, we will have a tensor of shape (N, T, H);
@@ -62,7 +66,7 @@ function EM:__init(kwargs)
   self.view2 = nn.View(1, -1):setNumInputDims(2)
 
   self.net:add(self.view1)
-  self.net:add(nn.Linear(H, V))
+  self.net:add(nn.Linear(H, D))
   self.net:add(self.view2)
 end
 
@@ -78,7 +82,7 @@ function EM:updateOutput(input)
   for _, view_out in ipairs(self.bn_view_out) do
     view_out:resetSize(N, T, -1)
   end
-
+  
   return self.net:forward(input)
 end
 

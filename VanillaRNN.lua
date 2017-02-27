@@ -128,7 +128,6 @@ function layer:updateOutput(input)
     next_h:tanh()
     prev_h = next_h
   end
-
   return self.output
 end
 
