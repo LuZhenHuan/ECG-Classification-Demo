@@ -42,7 +42,7 @@ cmd:option('-speed_benchmark', 0)
 cmd:option('-memory_benchmark', 0)
 
 -- Backend options
-cmd:option('-gpu', -1)
+cmd:option('-gpu', 0)
 cmd:option('-gpu_backend', 'cuda')
 
 local opt = cmd:parse(arg)
