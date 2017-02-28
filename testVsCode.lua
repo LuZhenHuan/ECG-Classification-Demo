@@ -1,22 +1,25 @@
-count = 1
-trainset = torch.load('RnnTrain.t7')
---load and process data
-function data_process(dataset)
+require 'torch'
+require 'nn'
+require 'gnuplot'
+require 'optim'
+require 'VanillaRNN'
 
-	xTemp = dataset[count]:view(-1,T)
-	count = count + 1
+model = nn.Sequential()
 
-	if count <= 50250 then
-		y = torch.Tensor{0,1}:view(1,1,-1)
-	else
-		y = torch.Tensor{1,0}:view(1,1,-1)
-	end
-	
-	if count == 110501 then
-		count = 1
-	end
-end
+model:add(nn.VanillaRNN(2,5))
+model:add(nn.View(-1))
+model:add(nn.Linear(5,1))
 
-print(#trainset)
-data_process(trainset)
-print(#xTemp)
+params, grad_params = model:getParameters()
+crit = nn.CrossEntropyCriterion()
+
+x = torch.Tensor(2):view(1,1,-1)
+y = torch.Tensor{0,1}
+
+print('x=',x,'y=',y)
+scores = model:forward(x)
+print(scores)
+
+scores_view = scores:view(3, -1)
+y_view = y:view(-1)
+loss = crit:forward(scores_view, y_view)  
