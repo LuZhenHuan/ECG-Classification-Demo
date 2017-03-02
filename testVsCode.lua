@@ -5,21 +5,41 @@ require 'optim'
 require 'VanillaRNN'
 
 model = nn.Sequential()
+model:add(nn.View(1,2,-1))
+model:add(nn.VanillaRNN(3,5))
+--model:add(nn.View(-1))
 
-model:add(nn.VanillaRNN(2,5))
-model:add(nn.View(-1))
-model:add(nn.Linear(5,1))
-
-params, grad_params = model:getParameters()
+--model:add(nn.Linear(3,2))
+--model:add(nn.LogSoftMax(5,5))
+--print(model)
+--params, grad_params = model:getParameters()
 crit = nn.CrossEntropyCriterion()
 
-x = torch.Tensor(2):view(1,1,-1)
-y = torch.Tensor{0,1}
+--model = nn.SoftMax()
+x = torch.Tensor{1,2,3,4,5,6}
+y = 1
 
-print('x=',x,'y=',y)
-scores = model:forward(x)
-print(scores)
+--[[local function f(w)
 
-scores_view = scores:view(3, -1)
-y_view = y:view(-1)
-loss = crit:forward(scores_view, y_view)  
+    scores = model:forward(x)
+    --model:zeroGradParameters()
+    loss = crit:forward(scores, y)  
+    grad_scores = crit:backward(scores,y)
+    model:backward(x, grad_scores)
+   -- model:updateParameters(0.02)
+    grad_params:clamp(-opt.grad_clip, opt.grad_clip)
+
+  return loss, grad_params
+end
+for i = 1, 200 do
+
+    _, loss = optim.adam(f, params, optim_config)
+    print(loss)
+
+end]]--
+
+--scores = model:forward(x)
+--loss = crit:forward(scores, y)  
+model:evaluate()
+
+print(model:forward(x))

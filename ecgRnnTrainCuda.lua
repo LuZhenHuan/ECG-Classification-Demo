@@ -10,20 +10,23 @@ require 'EcgModelSimple'
 
 dtype = 'torch.CudaTensor'
 --build a simple rnn 100 -> 100 -> 1
-model = nn.EcgModelSimple(100,100,2):type(dtype)
-crit = nn.MSECriterion():type(dtype)
+model = nn.EcgModelSimple(400,100,2):type(dtype)
+crit = nn.CrossEntropyCriterion():type(dtype)
 
 --Set up some variables we will use below
 
-N, T = 1, 100		--opt.batch_size, opt.seq_length	
+N, T = 1, 400		--opt.batch_size, opt.seq_length	
 count = 1
 flag  = 1
-max_epochs = 50
+max_epochs = 1
 train_loss_history = {}
 
 params, grad_params = model:getParameters()
 
 trainset = torch.load('RnnTrain.t7')
+
+
+--[[
 --load and process data
 function data_process(dataset)
 
@@ -31,9 +34,9 @@ function data_process(dataset)
 	count = count + 1
 
 	if count <= 50250 then
-		y = torch.Tensor{0,1}:view(1,1,-1)
+		y = torch.Tensor{1}
 	else
-		y = torch.Tensor{1,0}:view(1,1,-1)
+		y = torch.Tensor{2}
 	end
 	
 	if count == 110501 then
@@ -41,21 +44,27 @@ function data_process(dataset)
 	end
 end
 data_process(trainset)
+]]--
 
 --load a batch
 function next_batch()
 	
-	x = xTemp[flag]:view(1,-1,100)
+	x = trainset[count]:view(1,-1,T)
+	count = count + 1
 
-	flag = flag + 1
-	if flag > 4 then
-		flag = 1
-		end
+	if count <= 50250 then
+			y = 1
+		else
+			y = 2
+	end
+
+	if count == 110501 then
+		count = 1
+
 	x, y = x:type(dtype), y:type(dtype)
 
 	return x,y
 end
-
 
 --loss function 
 local function f(w)
@@ -70,42 +79,32 @@ local function f(w)
   local grad_scores = crit:backward(scores, y)
   model:backward(x, grad_scores)
   --model:resetStates()
+
+	grad_params:clamp(-5, 5)
+  
   return loss, grad_params
 end
 
 
 -- Train the model!
 
-num_train = 110500 * 4
+num_train = 110500
 num_iterations = max_epochs * num_train
 
 optim_config = {learningRate = 0.01}
 model:training()
 
 for i = 1 , num_iterations do
-	if i%4~=0 then
-		x,y = next_batch()
-		model:forward(x)
-	else
+	
 		_, loss = optim.adam(f, params, optim_config)
-		--table.insert(train_loss_history, loss[1])
-		--print(loss)
+		table.insert(train_loss_history, loss[1])
 		
-
-		model:resetStates()
-		data_process(trainset)
 		local float_epoch = i / num_train + 1
     	local msg = 'Epoch %.2f / %d, i = %d / %d, loss = %f'
     	local args = {msg, float_epoch, max_epochs, i, num_iterations, loss[1]}
     	print(string.format(unpack(args)))
-
-		if float_epoch == 50 then
-		torch.save('ecgmodelsimple50epoch.t7',model)	
-		elseif float_epoch == 51 then
-		torch.save('ecgmodelsimple51epoch.t7',model)	
-		end
-
+		
 	end
 	
 end
-torch.save('ecgmodelsimple.t7',model)
+

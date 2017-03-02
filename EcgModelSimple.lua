@@ -62,3 +62,7 @@ function EM:resetStates()
     rnn:resetStates()
   end
 end
+
+function EM:clearState()
+  self.net:clearState()
+end
