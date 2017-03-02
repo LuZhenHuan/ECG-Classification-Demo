@@ -25,27 +25,6 @@ params, grad_params = model:getParameters()
 
 trainset = torch.load('RnnTrain.t7')
 
-
---[[
---load and process data
-function data_process(dataset)
-
-	xTemp = dataset[count]:view(-1,T)
-	count = count + 1
-
-	if count <= 50250 then
-		y = torch.Tensor{1}
-	else
-		y = torch.Tensor{2}
-	end
-	
-	if count == 110501 then
-		count = 1
-	end
-end
-data_process(trainset)
-]]--
-
 --load a batch
 function next_batch()
 	
@@ -96,13 +75,13 @@ model:training()
 
 for i = 1 , num_iterations do
 	
-		_, loss = optim.adam(f, params, optim_config)
-		table.insert(train_loss_history, loss[1])
-		
-		local float_epoch = i / num_train + 1
-    	local msg = 'Epoch %.2f / %d, i = %d / %d, loss = %f'
-    	local args = {msg, float_epoch, max_epochs, i, num_iterations, loss[1]}
-    	print(string.format(unpack(args)))
+	_, loss = optim.adam(f, params, optim_config)
+	table.insert(train_loss_history, loss[1])
+	
+	local float_epoch = i / num_train + 1
+	local msg = 'Epoch %.2f / %d, i = %d / %d, loss = %f'
+	local args = {msg, float_epoch, max_epochs, i, num_iterations, loss[1]}
+	print(string.format(unpack(args)))
 		
 	end
 	
