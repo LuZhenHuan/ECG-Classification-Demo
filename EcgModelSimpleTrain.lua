@@ -2,13 +2,11 @@ require 'torch'
 require 'nn'
 require 'gnuplot'
 require 'optim'
-require 'cutorch'
-require 'cunn'
 require 'VanillaRNN'
 require 'EcgModelSimple'
 
 
-dtype = 'torch.CudaTensor'
+dtype = 'torch.FloatTensor'
 --build a simple rnn 100 -> 100 -> 1
 model = nn.EcgModelSimple(400,100,2):type(dtype)
 crit = nn.CrossEntropyCriterion():type(dtype)
@@ -31,13 +29,14 @@ local function next_batch()
 	count = count + 1
 
 	if count <= 50250 then
-			y = 1
+			y = torch.Tensor{1}
 		else
-			y = 2
+			y = torch.Tensor{2}
 	end
 
 	if count == 110501 then
 		count = 1
+    end
 
 	x, y = x:type(dtype), y:type(dtype)
 
@@ -81,7 +80,11 @@ for i = 1 , num_iterations do
 	local args = {msg, float_epoch, max_epochs, i, num_iterations, loss[1]}
 	print(string.format(unpack(args)))
 		
-	end
-	
 end
-
+torch.save('EMS20.t7',model)
+--test
+testset = torch.load('RnnTest.t7')
+for i = 1 ,100 do 
+	x = testset[i]
+	print(model:forward(x))
+	end
