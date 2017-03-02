@@ -25,7 +25,7 @@ params, grad_params = model:getParameters()
 trainset = torch.load('RnnTrain.t7')
 
 --load a batch
-function next_batch()
+local function next_batch()
 	
 	x = trainset[count]:view(1,-1,T)
 	count = count + 1
