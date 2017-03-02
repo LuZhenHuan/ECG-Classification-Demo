@@ -82,6 +82,7 @@ for i = 1 , num_iterations do
 		
 end
 torch.save('EMS20.t7',model)
+
 --test
 testset = torch.load('RnnTest.t7')
 for i = 1 ,100 do 
