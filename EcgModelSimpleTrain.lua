@@ -6,16 +6,16 @@ require 'VanillaRNN'
 require 'EcgModelSimple'
 
 
-dtype = 'torch.FloatTensor'
+dtype = 'torch.CudaTensor'
 --build a simple rnn 100 -> 100 -> 1
-model = nn.EcgModelSimple(400,100,2):type(dtype)
-crit = nn.CrossEntropyCriterion():type(dtype)
+model = nn.EcgModelSimple(400,400,2):type(dtype)
+crit = nn.MSECriterion():type(dtype)
 
 --Set up some variables we will use below
 
 N, T = 1, 400		--opt.batch_size, opt.seq_length	
 count = 1
-max_epochs = 1
+max_epochs = 20
 train_loss_history = {}
 
 params, grad_params = model:getParameters()
@@ -29,9 +29,9 @@ local function next_batch()
 	count = count + 1
 
 	if count <= 50250 then
-			y = torch.Tensor{1}
+			y = torch.Tensor{0,1}
 		else
-			y = torch.Tensor{2}
+			y = torch.Tensor{1,0}
 	end
 
 	if count == 110501 then
@@ -75,6 +75,10 @@ for i = 1 , num_iterations do
 	_, loss = optim.adam(f, params, optim_config)
 	table.insert(train_loss_history, loss[1])
 	
+	if i % 10 == 0 then
+    	model:resetStates() -- Reset hidden states
+	end
+
 	local float_epoch = i / num_train + 1
 	local msg = 'Epoch %.2f / %d, i = %d / %d, loss = %f'
 	local args = {msg, float_epoch, max_epochs, i, num_iterations, loss[1]}
@@ -85,7 +89,19 @@ torch.save('EMS20.t7',model)
 
 --test
 testset = torch.load('RnnTest.t7')
-for i = 1 ,100 do 
-	x = testset[i]
-	print(model:forward(x))
+
+err = 0
+model:evaluate()
+
+for i = 1, 39000 do
+
+	x = testset[i]:view(1,1,400):type(dtype)
+
+	a = model:forward(x):view(-1)
+	if i <=19500 and a[1]<a[2] then
+		err = err + 1
+
 	end
+
+end
+print(err/39000)

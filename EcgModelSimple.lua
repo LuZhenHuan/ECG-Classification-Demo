@@ -1,7 +1,6 @@
 require 'torch'
 require 'nn'
-
---require 'VanillaRNN'
+require 'VanillaRNN'
 
 local EM, parent = torch.class('nn.EcgModelSimple', 'nn.Module')
 
@@ -11,7 +10,7 @@ function EM:__init(input_dim, hidden_dim ,output_dim)
 
   self.net = nn.Sequential()
   self.rnns = {}
-
+  
   rnn = nn.VanillaRNN(V, H)
   
   rnn.remember_states = true

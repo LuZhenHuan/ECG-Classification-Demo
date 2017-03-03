@@ -17,7 +17,7 @@ crit = nn.CrossEntropyCriterion():type(dtype)
 
 N, T = 1, 400		--opt.batch_size, opt.seq_length	
 count = 1
-max_epochs = 1
+max_epochs = 20
 train_loss_history = {}
 
 params, grad_params = model:getParameters()
@@ -31,13 +31,14 @@ function next_batch()
 	count = count + 1
 
 	if count <= 50250 then
-			y = 1
+			y = torch.Tensor{1}
 		else
-			y = 2
+			y = torch.Tensor{1}
 	end
 
 	if count == 110501 then
 		count = 1
+	end
 
 	x, y = x:type(dtype), y:type(dtype)
 
@@ -80,8 +81,7 @@ for i = 1 , num_iterations do
 	local msg = 'Epoch %.2f / %d, i = %d / %d, loss = %f'
 	local args = {msg, float_epoch, max_epochs, i, num_iterations, loss[1]}
 	print(string.format(unpack(args)))
-		
-	end
-	
+			
 end
 
+torch.save('EMS20.t7',model)
