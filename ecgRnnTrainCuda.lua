@@ -22,11 +22,10 @@ train_loss_history = {}
 
 params, grad_params = model:getParameters()
 
-trainset = torch.load('RnnTrain.t7')
-
+trainTemp = torch.load('RnnTrain.t7')
+trainset = trainTemp:view(50,-1,400):transpose(1,2):clone()
 --load a batch
-function next_batch()
-	
+function next_batch()	
 	x = trainset[count]:view(1,-1,T)
 	count = count + 1
 
