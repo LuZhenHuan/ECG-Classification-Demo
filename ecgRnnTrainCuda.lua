@@ -19,23 +19,27 @@ N, T = 1, 400		--opt.batch_size, opt.seq_length
 count = 1
 max_epochs = 20
 train_loss_history = {}
-
+batch_size = 50
 params, grad_params = model:getParameters()
 
-trainTemp = torch.load('RnnTrain.t7')
-trainset = trainTemp:view(50,-1,400):transpose(1,2):clone()
+trainTemp = torch.load('RnnTrain1D.t7')
+trainset = trainTemp:view(batch_size,-1,400):transpose(1,2):clone()
+train_len = trainset:size(1)
+
 --load a batch
 function next_batch()	
 	x = trainset[count]:view(1,-1,T)
 	count = count + 1
 
-	if count <= 50250 then
-			y = torch.Tensor{1}
+	if count <= (train_len/2) then
+			y = torch.Tensor(50):fill(1)
+			y[{{26,50}}] = 2
 		else
-			y = torch.Tensor{1}
+			y = torch.Tensor(50):fill(2)
+			y[{{26,50}}] = 1
 	end
 
-	if count == 110501 then
+	if count == train_len then
 		count = 1
 	end
 
@@ -65,10 +69,10 @@ end
 
 
 -- Train the model!
-num_train = 110500
+num_train = train_len
 num_iterations = max_epochs * num_train
 
-optim_config = {learningRate = 0.01}
+optim_config = {learningRate = 0.001}
 model:training()
 
 for i = 1 , num_iterations do

@@ -2,11 +2,11 @@ require 'torch'
 require 'nn'
 require 'gnuplot'
 require 'optim'
-require 'VanillaRNN'
+require 'LSTM'
 
 model = nn.Sequential()
 --model:add(nn.View(1,50,100))
-model:add(nn.VanillaRNN(100,100))
+model:add(nn.LSTM(100,100))
 view1 = nn.View(50, -1)
 view2 = nn.View(50,100, -1)
 --model:add(nn.View(-1))
