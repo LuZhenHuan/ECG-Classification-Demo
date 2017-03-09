@@ -31,7 +31,7 @@ local function err_test()
 		x = testset[i]:view(1,1,400):type(dtype)
 
 		a = model:forward(x):view(-1)
-		if i <=1000 and a[1]<a[2] then
+		if i <=19500 and a[1]<a[2] then
 			err = err + 1
 			table.insert(err_sample_tf, x)
 		elseif i > 19500 and a[1]>a[2] then

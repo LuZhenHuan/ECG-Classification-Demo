@@ -1,4 +1,4 @@
-require 'torch'
+--[[require 'torch'
 require 'nn'
 require 'gnuplot'
 require 'optim'
@@ -51,7 +51,7 @@ for i = 1,10 do
     elseif i >5 and 1>2 then
     print '2'
     end
-end]]--
+end
 
 model:evaluate()
 
@@ -60,7 +60,5 @@ loss = crit:forward(scores, y)
     grad_scores = crit:backward(scores,y)
     model:backward(x, grad_scores)
 
+print(scores,loss,grad_scores)]]--
 
-
-
-print(scores,loss,grad_scores)
