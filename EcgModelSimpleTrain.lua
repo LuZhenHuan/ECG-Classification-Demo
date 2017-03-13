@@ -17,7 +17,7 @@ crit = nn.CrossEntropyCriterion():type(dtype)
 
 N, T = 50, 400		--opt.batch_size, opt.seq_length	
 count = 1
-max_epochs = 10 
+max_epochs = 0.5 
 train_loss_history = {}
 val_loss_history = {}
 err_rate = {}

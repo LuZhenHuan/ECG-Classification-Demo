@@ -25,7 +25,7 @@ local trainset = torch.load('RnnTrain1D.t7')
 vx = trainset:view(50, -1, 100):transpose(1, 2):clone()
 x = vx[1]:view(1,50,100)
 y = torch.Tensor(50):fill(1)
---[[local function f(w)
+local function f(w)
 
     scores = model:forward(x)
     model:zeroGradParameters()
