@@ -171,7 +171,7 @@ function layer:backward(input, gradOutput, scale)
     grad_next_h:mm(grad_a, Wh:t())
     self.buffer2:resize(1, H):sum(grad_a, 1)
     grad_b:add(scale, self.buffer2)
-  end
+  end  
   grad_h0:copy(grad_next_h)
 
   if self._return_grad_h0 then
