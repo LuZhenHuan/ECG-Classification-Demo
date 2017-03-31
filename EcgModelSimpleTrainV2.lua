@@ -14,12 +14,11 @@ dtype = 'torch.CudaTensor'
 model = nn.EcgModelSimple(200,50,2):type(dtype)
 crit = nn.CrossEntropyCriterion():type(dtype)
 
-
 --Set up some variables we will use below
 
 N, T ,D= 10, 10, 200	--opt.batch_size, opt.seq_length , word_dim	
 count = 1
-max_epochs = 300
+max_epochs = 50
 train_loss_history = {}
 val_loss_history = {}
 err_rate = {}
@@ -45,6 +44,7 @@ local function next_batch(dataset)
 	data_len = dataset:size(1)
 
 	x = dataset[count]:view(N,-1,D)
+
 	count = count + 1
 	
 	if count == data_len+1 then
@@ -62,27 +62,28 @@ end
 --test
 local function err_test()
 	err = 0
+	model:resetStates()
+	model:evaluate()
 
 	for i = 1, m do
 
 		x = testset[i]:view(1,10,200):type(dtype)
 
 		a = model:forward(x):view(-1)
-		if i <=m/2 and a[19]<a[20] then
+		if i <= m/2 and a[19]<a[20] then
 			err = err + 1
 			table.insert(err_sample_tf, x)
-			print(i)
+			--print(i)
 		elseif i > m/2 and a[19]>a[20] then
 			err = err + 1
 			table.insert(err_sample_ft, x)
-			print(i)
+			--print(i)
 		end
 		err_r = err
 		
 	end
 	return err_r
 end
-
 
 --loss function 
 local function f(w)
@@ -108,10 +109,10 @@ end
 -- Train the model!
 num_train = train_len
 num_iterations = max_epochs * num_train
-plot = torch.Tensor(10)
 optim_config = {learningRate = 0.001}
-model:training()
 tra_loss = 0
+
+model:training()
 
 for i = 1 , num_iterations do
 	
@@ -122,16 +123,17 @@ for i = 1 , num_iterations do
 	local msg = 'Epoch %.2f / %d, i = %d / %d, loss = %f'
 	local args = {msg, float_epoch, max_epochs, i, num_iterations, loss[1]}
 	print(string.format(unpack(args)))
-	
+
 	-- Epoch end
-	if i % num_train == 0 then
+	if i % num_train == 1 then
 		
 		-- Evaluate loss on the validation set
 		
 		--model:evaluate()
-    	model:resetStates() -- Reset hidden states
-		table.insert(train_loss_history, tra_loss/num_train)
-		tra_loss = 0
+    	--model:resetStates() -- Reset hidden states
+		--table.insert(train_loss_history, tra_loss/num_train)
+		--tra_loss = 0
+
 --[[
 		local val_loss = 0
 		for j = 1, 180 do
@@ -153,21 +155,23 @@ for i = 1 , num_iterations do
 
 		model:resetStates() -- Reset hidden states
 
-		model:training()
+		--model:training()
 
 	end
 
 end
 
---torch.save('EMSs10*200e200.t7',model)		--s = sequence  e = epoch
-
+torch.save('EMSTRTest.t7',model)		--s = sequence  e = epoch
+err_r = err_test()
+print(err_r)
+--[[ 
 plotT = torch.Tensor(max_epochs)
 
 for k,v in ipairs(train_loss_history) do
 	plotT[k]=v
 end
 
- --[[                                       
+                                       
 plotV = torch.Tensor(max_epochs)
 
 for k,v in ipairs(val_loss_history) do
@@ -183,5 +187,6 @@ for k,v in ipairs(err_rate) do
 end
 gnuplot.plot({'train_loss',plotT},{'val_loss',plotV},{'err_rate',plotE})
 
-]]--
+
 gnuplot.plot({'train_loss',plotT})
+]]--
