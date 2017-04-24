@@ -20,16 +20,16 @@ print(#data)
 ]]--
 
 require 'csvigo'
-dataOriginal = csvigo.load{path = 'RnnTrain.csv',mode = 'raw'}
-M, N = 110500,400
+dataOriginal = csvigo.load{path = 'D1Test.csv',mode = 'raw'}
+M, N = 6500000,400
 
-Data = torch.Tensor(M,N)
+Data = torch.Tensor(M)
 
 for i=1,M do
-	for j=1,N do
-		Data[i][j] = dataOriginal[i][j];
-	end
+	
+		Data[i] = dataOriginal[i];
+
 end
 print(#Data)	
 --print (Data)	
-torch.save('RnnTrain.t7',Data)
+torch.save('D1Test.t7',Data)

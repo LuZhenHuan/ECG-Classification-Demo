@@ -6,12 +6,16 @@ local layer, parent = torch.class('nn.VanillaRNN', 'nn.Module')
 
 --[[
 Vanilla RNN with tanh nonlinearity that operates on entire sequences of data.
+
 The RNN has an input dim of D, a hidden dim of H, operates over sequences of
 length T and minibatches of size N.
+
 On the forward pass we accept a table {h0, x} where:
 - h0 is initial hidden states, of shape (N, H)
 - x is input sequence, of shape (N, T, D)
+
 The forward pass returns the hidden states at each timestep, of shape (N, T, H).
+
 SequenceRNN_TN swaps the order of the time and minibatch dimensions; this is
 very slightly faster, but probably not worth it since it is more irritating to
 work with.
@@ -58,7 +62,7 @@ end
 function layer:_unpack_input(input)
   local h0, x = nil, nil
   if torch.type(input) == 'table' and #input == 2 then
-    h0, x = table.unpack(input)
+    h0, x = unpack(input)
   elseif torch.isTensor(input) then
     x = input
   else
@@ -171,7 +175,7 @@ function layer:backward(input, gradOutput, scale)
     grad_next_h:mm(grad_a, Wh:t())
     self.buffer2:resize(1, H):sum(grad_a, 1)
     grad_b:add(scale, self.buffer2)
-  end  
+  end
   grad_h0:copy(grad_next_h)
 
   if self._return_grad_h0 then
@@ -213,4 +217,3 @@ function layer:__tostring__()
   local din, dout = self.input_dim, self.hidden_dim
   return string.format('%s(%d -> %d)', name, din, dout)
 end
-

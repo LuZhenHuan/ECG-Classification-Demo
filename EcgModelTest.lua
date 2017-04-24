@@ -5,13 +5,13 @@ require 'cunn'
 require 'cutorch'
 
 --let's test the model
-model = torch.load('EMSTR20.t7')
+model = torch.load('EMSTRTest0.007.t7')
 dtype = 'torch.CudaTensor'
 
-T ,D= 10, 200
+N, T ,D= 20, 5, 400	--opt.batch_size, opt.seq_length , word_dim	
 
-testTemp = torch.load('RnnTestCut.t7')
-testset = testTemp:view(-1,T*D)
+testTemp = torch.load('RnnTestCut.t7')/4
+testset = testTemp:view(-1,T*D):type(dtype)
 
 m = testset:size(1)
 
@@ -25,27 +25,24 @@ err_sample_ft = {}
 local function err_test()
 	err = 0
 	model:resetStates()
+		
 	model:evaluate()
-
 	for i = 1, m do
-	
-		x = testset[i]:view(1,10,200):type(dtype)
+
+		x = testset[i]:view(1,T,D):type(dtype)
 
 		a = model:forward(x):view(-1)
-		if i <=m/2 and a[19]<a[20] then
+		if i <= m/2 and a[T*2-1]<a[2*T] then
 			err = err + 1
 			table.insert(err_sample_tf, x)
-		
-		elseif i > m/2 and a[19]>a[20] then
+			--print(i)
+		elseif i > m/2 and a[T*2-1]>a[2*T] then
 			err = err + 1
 			table.insert(err_sample_ft, x)
-		
+			--print(i)
 		end
-		err_r = err
-		
 	end
-
-	model:training()
+	err_r = err/m
 	return err_r
 end
 
