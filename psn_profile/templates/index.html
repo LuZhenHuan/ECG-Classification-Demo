@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PSN Profile Search</title>
+</head>
+<body>
+    <h1>PSN Profile Search</h1>
+    <form method="get" action="{% url 'fetch_profile:getProfile' %}">
+        <input type="text" name="psn_id" placeholder="enter your PSN id">
+        <input type="submit" value="submit">
+    </form>
+</body>
+</html>
