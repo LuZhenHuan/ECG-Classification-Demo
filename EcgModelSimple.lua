@@ -21,7 +21,7 @@ function EM:__init(input_dim, hidden_dim ,output_dim)
   rnn.remember_states = true
   table.insert(self.rnns, rnn)
   self.net:add(rnn)
-
+--[[
   local view_in = nn.View(1, 1, -1):setNumInputDims(3)
   table.insert(self.bn_view_in, view_in)
   self.net:add(view_in)
@@ -30,8 +30,8 @@ function EM:__init(input_dim, hidden_dim ,output_dim)
   table.insert(self.bn_view_out, view_out)
   self.net:add(view_out)
 
-  --self.net:add(nn.Dropout(0.5))
-
+  self.net:add(nn.Dropout(0.2))
+]]--
 	self.view1 = nn.View(1, 1, -1):setNumInputDims(3)     
 	self.view2 = nn.View(1, -1):setNumInputDims(2)
 
@@ -44,7 +44,7 @@ function EM:updateOutput(input)
   local N, T = input:size(1), input:size(2)
   self.view1:resetSize(N * T, -1)
   self.view2:resetSize(N, T, -1)
-
+--[[
   for _, view_in in ipairs(self.bn_view_in) do
     view_in:resetSize(N * T, -1)
   end
@@ -52,7 +52,7 @@ function EM:updateOutput(input)
   for _, view_out in ipairs(self.bn_view_out) do
     view_out:resetSize(N, T, -1)
   end
-
+]]--
   return self.net:forward(input)
 end
 

@@ -10,9 +10,18 @@ require 'EcgModelSimple'
 require 'cutorch'
 require 'cunn'
 
+local cmd = torch.CmdLine()
+
+cmd:option('-gpu', 1)
+cmd:option('data', 'D1')
+
+local opt = cmd:parse(arg)
+
+cutorch.setDevice(opt.gpu)
+
 dtype = 'torch.CudaTensor'
 --build a simple rnn 100 -> 100 -> 1
-model = nn.EcgModelSimple(400,200,2):type(dtype)
+model = nn.EcgModelSimple(400,100,2):type(dtype)
 crit = nn.CrossEntropyCriterion():type(dtype)
 
 --Set up some variables we will use below
@@ -33,11 +42,11 @@ err_sample_ft = {}
 params, grad_params = model:getParameters()
 
 --data process
-trainTemp = torch.load('D8Train.t7')/4
+trainTemp = torch.load('D5Train.t7')/4
 trainset = trainTemp:view(N,-1,T*D):transpose(1,2):clone()
 train_len = trainset:size(1)
 
-testTemp = torch.load('D8Test.t7')/4
+testTemp = torch.load('D5Test.t7')/4
 testset = testTemp:view(-1,T*D)
 m = testset:size(1)
 
