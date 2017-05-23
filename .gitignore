@@ -5,6 +5,7 @@
 *.csv
 *.json
 *.mat
+*.jar
 
 # Icon must end with two \r
 Icon
