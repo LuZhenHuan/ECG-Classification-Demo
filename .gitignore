@@ -4,6 +4,7 @@
 *.t7
 *.csv
 *.json
+*.mat
 
 # Icon must end with two \r
 Icon
