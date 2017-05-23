@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 test_input = Variable(torch.ones(5,2,400))
-test_label = Variable(torch.LongTensor([0,1]))
+test_label = Variable(torch.LongTensor(50))
 
 ##################################################################
 # build a nerul network 
@@ -36,8 +36,6 @@ class RNN(nn.Module):
     def initHidden(self):
         return Variable(torch.zeros(2, self.hidden_size))
 
-model = RNN(400, 100, 2)
-
 ##################################################################
 # train loop
 
@@ -60,7 +58,22 @@ def train(input,label):
 ##################################################################
 #let's train it
 
-train(test_input, test_label)
+model = RNN(400, 100, 2)
+
+n_epochs = 5200 
+print_every = 5000
+plot_every = 1000
+
+for epoch in range(1, 5200 + 1):
+    target, input, category_tensor, line_tensor = randomTrainingPair()
+    output, loss = train(input, target)
+    current_loss += loss
+
+    # Print epoch number, loss, name and guess
+    if epoch % print_every == 0:
+        print('%d %d%% (%s) %.4f %s / %s %s' % (epoch, epoch / n_epochs * 100, timeSince(start), loss, line, guess, correct))
+
+
 
 
 
