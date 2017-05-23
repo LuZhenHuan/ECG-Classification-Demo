@@ -63,9 +63,10 @@ model = RNN(400, 100, 2)
 n_epochs = 5200 
 print_every = 5000
 plot_every = 1000
+current_loss = []
 
 for epoch in range(1, 5200 + 1):
-    target, input, category_tensor, line_tensor = randomTrainingPair()
+    target, input = read_data()
     output, loss = train(input, target)
     current_loss += loss
 
