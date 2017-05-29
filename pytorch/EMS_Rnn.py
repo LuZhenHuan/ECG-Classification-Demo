@@ -3,6 +3,8 @@
 # the MIT ecg data. it is <5x1x400>
 
 import torch
+import time
+import math
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.serialization import load_lua
@@ -10,14 +12,24 @@ from torch.utils.serialization import load_lua
 N, T ,D= 50, 5, 400	#opt.batch_size, opt.seq_length , word_dim	
 
 train_temp = load_lua('D1Train.t7')
-trainset = train_temp.view(50,-1,2000).transpose(0,1).clone().cuda()
+trainset = train_temp.view(50,-1,2000).transpose(0,1).clone()
 data_len = trainset.size()[0]
 
 test_temp = load_lua('D1Test.t7')
-testset = train_temp.view(-1,2000).cuda()
+testset = train_temp.view(-1,2000)
 test_len = testset.size()[0]
 
 count = 0
+
+def timeSince(since):
+    now = time.time()
+    s = now - since
+    m = math.floor(s / 60)
+    s -= m * 60
+    return '%dm %ds' % (m, s)
+
+start = time.time()
+
 def read_data():
     global count, trainset
 
@@ -93,7 +105,7 @@ def test(input):
 ##################################################################
 # let's train it
 
-n_epochs = 20
+n_epochs = 3
 print_every = data_len
 current_loss = 0
 all_losses = []
@@ -131,15 +143,9 @@ plt.title('loss')
 plt.figure()
 plt.plot(err_rate)
 plt.title('err')
+print(timeSince(start))
 
 plt.show()
-
-
-
-
-
-
-    
 
 print(err)    
 

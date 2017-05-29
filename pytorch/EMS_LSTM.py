@@ -1,21 +1,19 @@
 import torch
 import math
 import torch.nn as nn
-import torchvision
 from torch.autograd import Variable
 
 from torch.utils.serialization import load_lua
 
 N, T ,D= 50, 5, 400	#opt.batch_size, opt.seq_length , word_dim	
 
-train_temp = load_lua('/home/lu/code/D3Train.t7')
-trainset = train_temp.view(50,-1,2000).transpose(0,1).clone()
+train_temp = load_lua('D1Train.t7')
+trainset = train_temp.view(50,-1,2000).transpose(0,1).clone().cuda()
 data_len = trainset.size()[0]
 
-test_temp = load_lua('/home/lu/code/D3Test.t7')
-testset = test_temp.view(-1,2000).cuda()
+test_temp = load_lua('D1Test.t7')
+testset = train_temp.view(-1,2000).cuda()
 test_len = testset.size()[0]
-print(data_len, test_len)
 
 count = 0
 
@@ -23,13 +21,13 @@ def read_data():
     global count, trainset
 
     x = trainset[count].view(N,T,D).transpose(0,1).clone()
-    x = x.type('torch.cuda.FloatTensor')
+    x = x.type('torch.FloatTensor')
 
     count +=  1
     if(count == data_len):
         count = 0
 
-    y = torch.cuda.LongTensor(50).cuda()
+    y = torch.LongTensor(50)
     y[0:25] = 0
     y[25:50] = 1
 
@@ -38,11 +36,11 @@ def read_data():
 ##################################################################
 # build a nerul network with nn.RNN
 
-class RNN(nn.Module):
+class lstm(nn.Module):
     def __init__(self, input_size, hidden_szie, output_size):
-        super(RNN, self).__init__()
+        super(lstm, self).__init__()
         
-        self.rnn = nn.RNN(input_size, hidden_szie, 2)
+        self.rnn = nn.LSTM(input_size, hidden_szie, 2)
         self.h2o = nn.Linear(hidden_szie, output_size)
 
     def forward(self, input):
@@ -52,8 +50,7 @@ class RNN(nn.Module):
 
 ##################################################################
 # train loop
-model = RNN(400, 100, 2)
-model = model.cuda()
+model = lstm(400, 100, 2)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.CrossEntropyLoss()
@@ -70,7 +67,7 @@ def train(input, label):
 def test(input):
     hidden = Variable(torch.zeros(1,100))
     input = Variable(input.view(5,1,400))
-    input = input.type('torch.cuda.FloatTensor')
+    input = input.type('torch.FloatTensor')
 
     output = model(input)
     top_n, top_i = output.data.topk(1)
@@ -80,14 +77,14 @@ def test(input):
 ##################################################################
 # let's train it
 
-n_epochs = 10
+n_epochs = 50
 print_every = data_len
 current_loss = 0
 all_losses = []
 err_rate = []
 err = 0
 
-for epoch in range(1, data_len*n_epochs):
+for epoch in range(1, data_len*n_epochs+1):
     input, target = read_data()
     output, loss = train(input, target)
     current_loss += loss
@@ -99,19 +96,18 @@ for epoch in range(1, data_len*n_epochs):
 
         for i in range(test_len):
             guess = test(testset[i])
-            #print(guess)
             if i < test_len/2 and guess == 1:
                     err +=1
             if i >= test_len/2 and guess == 0:
                     err += 1
                     
         err_rate.append((1-err/test_len)*100)
-        
-        print(err)
-        print((1-err/test_len)*100)
+        if epoch / data_len >= 40:
+            print(err)
+            print((1-err/test_len)*100)
         err = 0
-'''
-import matplotlib.pyplot as plt
+
+'''import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 

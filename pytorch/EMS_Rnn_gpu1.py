@@ -5,14 +5,16 @@ import torchvision
 from torch.autograd import Variable
 
 from torch.utils.serialization import load_lua
+torch.cuda.set_device(1)
+
 
 N, T ,D= 50, 5, 400	#opt.batch_size, opt.seq_length , word_dim	
 
-train_temp = load_lua('/home/lu/code/D3Train.t7')
+train_temp = load_lua('/home/lu/code/D1Train.t7')
 trainset = train_temp.view(50,-1,2000).transpose(0,1).clone()
 data_len = trainset.size()[0]
 
-test_temp = load_lua('/home/lu/code/D3Test.t7')
+test_temp = load_lua('/home/lu/code/D1Test.t7')
 testset = test_temp.view(-1,2000).cuda()
 test_len = testset.size()[0]
 print(data_len, test_len)
@@ -81,25 +83,24 @@ def test(input):
 # let's train it
 
 n_epochs = 10
-print_every = data_len
+print_every = 1
 current_loss = 0
 all_losses = []
 err_rate = []
 err = 0
 
-for epoch in range(1, data_len*n_epochs):
+for epoch in range(1, 100):
     input, target = read_data()
     output, loss = train(input, target)
     current_loss += loss
 
     if epoch % print_every == 0:
-        print(math.floor(epoch / data_len), current_loss / print_every)
+        #print(math.floor(epoch / data_len), current_loss / print_every)
         all_losses.append(current_loss / print_every)
         current_loss = 0
 
         for i in range(test_len):
             guess = test(testset[i])
-            #print(guess)
             if i < test_len/2 and guess == 1:
                     err +=1
             if i >= test_len/2 and guess == 0:
@@ -110,7 +111,7 @@ for epoch in range(1, data_len*n_epochs):
         print(err)
         print((1-err/test_len)*100)
         err = 0
-'''
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
@@ -122,5 +123,5 @@ plt.figure()
 plt.plot(err_rate)
 plt.title('err')
 
-plt.show()'''
+plt.show()
 
