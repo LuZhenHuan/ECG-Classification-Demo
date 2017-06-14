@@ -1,16 +1,10 @@
-import os
-import time
-import math
+import numpy
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
-def timeSince(since):
-    now = time.time()
-    s = now - since
-    m = math.floor(s / 60)
-    s -= m * 60
-    return '%dm %ds' % (m, s)
+confusion = numpy.random.rand(8,8)
 
-start = time.time()
-
-for i in range(100000):
-    
-print(timeSince(start))
+fig = plt.figure()
+ax = fig.add_subplot(111)
+cax = ax.matshow(confusion)
+fig.colorbar(cax)

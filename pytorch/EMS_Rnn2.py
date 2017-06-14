@@ -6,13 +6,13 @@ from torch.autograd import Variable
 
 from torch.utils.serialization import load_lua
 
-N, T ,D= 50, 5, 400	#opt.batch_size, opt.seq_length , word_dim	
+N, T ,D= 50, 10, 200	#opt.batch_size, opt.seq_length , word_dim	
 
-train_temp = load_lua('/home/lu/code/D3Train.t7')
+train_temp = load_lua('/home/lu/code/D9Train.t7')
 trainset = train_temp.view(50,-1,2000).transpose(0,1).clone()
 data_len = trainset.size()[0]
 
-test_temp = load_lua('/home/lu/code/D3Test.t7')
+test_temp = load_lua('/home/lu/code/D9Test.t7')
 testset = test_temp.view(-1,2000).cuda()
 test_len = testset.size()[0]
 print(data_len, test_len)
@@ -42,7 +42,7 @@ class RNN(nn.Module):
     def __init__(self, input_size, hidden_szie, output_size):
         super(RNN, self).__init__()
         
-        self.rnn = nn.RNN(input_size, hidden_szie, 2)
+        self.rnn = nn.LSTM(input_size, hidden_szie, 2)
         self.h2o = nn.Linear(hidden_szie, output_size)
 
     def forward(self, input):
@@ -52,7 +52,7 @@ class RNN(nn.Module):
 
 ##################################################################
 # train loop
-model = RNN(400, 100, 2)
+model = RNN(200, 100, 2)
 model = model.cuda()
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -69,7 +69,7 @@ def train(input, label):
 
 def test(input):
     hidden = Variable(torch.zeros(1,100))
-    input = Variable(input.view(5,1,400))
+    input = Variable(input.view(10,1,200))
     input = input.type('torch.cuda.FloatTensor')
 
     output = model(input)
@@ -80,14 +80,14 @@ def test(input):
 ##################################################################
 # let's train it
 
-n_epochs = 10
+n_epochs = 20
 print_every = data_len
 current_loss = 0
 all_losses = []
 err_rate = []
 err = 0
 
-for epoch in range(1, data_len*n_epochs):
+for epoch in range(1, data_len*n_epochs+1):
     input, target = read_data()
     output, loss = train(input, target)
     current_loss += loss
@@ -104,13 +104,14 @@ for epoch in range(1, data_len*n_epochs):
                     err +=1
             if i >= test_len/2 and guess == 0:
                     err += 1
-                    
+
         err_rate.append((1-err/test_len)*100)
         
+
         print(err)
         print((1-err/test_len)*100)
         err = 0
-'''
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
@@ -122,5 +123,4 @@ plt.figure()
 plt.plot(err_rate)
 plt.title('err')
 
-plt.show()'''
-
+plt.show()
