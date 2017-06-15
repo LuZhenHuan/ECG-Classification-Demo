@@ -4,26 +4,24 @@ import scipy.io as sci
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-
-from torch.utils.serialization import load_lua
+import torch.utils.data as Data
 
 N, T ,D= 60, 5, 400	#opt.batch_size, opt.seq_length , word_dim	
 
 #process traindata and trainlabel
 train_temp = torch.from_numpy(sci.loadmat('/home/lu/code/pytorch/D1TrainCCDD.mat')['trainset']*0.0048).clone()
-trainset = train_temp.view(N,-1,4000).transpose(0,1)
-data_len = trainset.size()[0]
 
 train_label = torch.cuda.LongTensor(64800)
 for i in range(6):
     train_label[i*10800:(i+1)*10800] = i
 
-train_label = train_label.view(-1,N)
+ecg_dataset = Data.TensorDataset(data_tensor=train_temp, target_tensor=train_label)
 
-y = torch.cuda.LongTensor(60)
-for i in range(6):
-    y[i*10:(i+1)*10] = i
-
+loader = Data.DataLoader(
+    dataset = ecg_dataset,
+    batch_size = 60,
+    shuffle = True,
+)
 
 #process testdata and testlabel
 test_temp = torch.from_numpy(sci.loadmat('/home/lu/code/pytorch/D1TestCCDD.mat')['testset']*0.0048).clone()
@@ -36,24 +34,6 @@ for i in range(6):
 
 test_dataset = {'data':testset,'label':test_label}
 
-print(data_len, test_len)
-
-count = 0
-
-def read_data():
-    global count, trainset, y
-
-    x = trainset[count]
-    x = x.type('torch.cuda.FloatTensor')
-
-    #y = train_label[count]
-
-    count +=  1
-    if(count == data_len):
-        count = 0
-
-    return Variable(x), Variable(y)
-
 ##################################################################
 # build a MLP
 
@@ -61,20 +41,18 @@ class MLP(nn.Module):
     def __init__(self, input_size, hidden_szie, output_size):
         super(MLP, self).__init__()
         
-        self.i2h = nn.Linear(input_size, hidden_szie1)
-        self.h2o = nn.Linear(hidden_szie3, output_size)
+        self.i2h = nn.Linear(input_size, hidden_szie)
+        self.h2o = nn.Linear(hidden_szie, output_size)
 
     def forward(self, input):
-        hidden1 = F.sigmoid(self.iTOh1(input))
-        hidden2 = F.sigmoid(self.h1TOh2(hidden1))
-        hidden3 = F.sigmoid(self.h2TOh3(hidden2))
-        output = self.h3TOo(hidden3)
+        hidden = F.sigmoid(self.i2h(input))
+        output = self.h2o(hidden)
 
         return output
 
 ##################################################################
 # train loop
-model = MLP(4000, 3000, 2000, 1000, 6)
+model = MLP(4000, 2000, 6)
 model = model.cuda()
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -102,34 +80,39 @@ def test(input):
 ##################################################################
 # let's train it
 
-n_epochs = 200
-print_every = data_len
+n_epochs = 100
 current_loss = 0
 all_losses = []
 err_rate = []
 err = 0
+confusion = torch.zeros(6, 6)
 
-for epoch in range(1, data_len*n_epochs+1):
-    input, target = read_data()
-    output, loss = train(input, target)
-    current_loss += loss
+for epoch in range(1, n_epochs):
+    for step,(batch_x, batch_y) in enumerate(loader):
+        batch_x = Variable(batch_x.type('torch.cuda.FloatTensor'))
+        batch_y = Variable(batch_y.type('torch.cuda.LongTensor'))
+        output, loss = train(batch_x, batch_y)
+        current_loss += loss
 
-    if epoch % print_every == 0:
-        print(math.floor(epoch / data_len), current_loss / print_every)
-        all_losses.append(current_loss / print_every)
-        current_loss = 0
-        if epoch >= data_len*1:
-            for i in range(test_len):
-                guess = test(test_dataset['data'][i])
-                #print(guess)
-                if guess != test_dataset['label'][i]:
-                        err += 1
+    print(epoch)
+
+    all_losses.append(current_loss / 1080)
+    current_loss = 0
+
+for i in range(test_len):
+    guess = test(test_dataset['data'][i])
+    #print(guess)
+    if guess != test_dataset['label'][i]:
+            err += 1
         
-            err_rate.append((1-err/test_len)*100)
+    confusion[guess][test_dataset['label'][i]] += 1
 
-            print(err)
-            print((1-err/test_len)*100)
-            err = 0
+err_rate.append((1-err/test_len)*100)
+
+print(err)
+print((1-err/test_len)*100)
+err = 0
+
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -141,5 +124,11 @@ plt.title('loss')
 plt.figure()
 plt.plot(err_rate)
 plt.title('err')
+
+print(confusion)
+fig = plt.figure()
+ax = fig.add_subplot(111)
+cax = ax.matshow(confusion.numpy())
+fig.colorbar(cax)
 
 plt.show()

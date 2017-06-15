@@ -14,10 +14,10 @@ ecg_dataset = Data.TensorDataset(data_tensor=train_temp, target_tensor=train_lab
 loader = Data.DataLoader(
     dataset = ecg_dataset,
     batch_size = 60,
-    shuffle = True,
+    shuffle = False,
 )
 c=0
-for a,b in enumerate(loader):
+for a,(b,d) in enumerate(loader):
     print(a)
     print(b)
     break
