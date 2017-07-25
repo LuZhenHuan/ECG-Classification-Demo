@@ -50,7 +50,7 @@ class lstm(nn.Module):
 
 ##################################################################
 # train loop
-model = lstm(400, 100, 2)
+model = lstm(400, 200, 2)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.CrossEntropyLoss()
@@ -107,7 +107,7 @@ for epoch in range(1, data_len*n_epochs+1):
             print((1-err/test_len)*100)
         err = 0
 
-'''import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 
@@ -118,5 +118,5 @@ plt.figure()
 plt.plot(err_rate)
 plt.title('err')
 
-plt.show()'''
+plt.show()
 

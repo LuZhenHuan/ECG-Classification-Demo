@@ -28,7 +28,7 @@ crit = nn.CrossEntropyCriterion():type(dtype)
 
 N, T ,D= 50, 5, 400	--opt.batch_size, opt.seq_length , word_dim	
 count = 1
-max_epochs = 100
+max_epochs = 20
 lr_decay_every = 5
 lr_decay_factor = 0.5
 
@@ -42,11 +42,11 @@ err_sample_ft = {}
 params, grad_params = model:getParameters()
 
 --data process
-trainTemp = torch.load('D5Train.t7')/4
+trainTemp = torch.load('/home/lu/code/MITcv/D5Train.t7')/4
 trainset = trainTemp:view(N,-1,T*D):transpose(1,2):clone()
 train_len = trainset:size(1)
 
-testTemp = torch.load('D5Test.t7')/4
+testTemp = torch.load('/home/lu/code/MITcv/D5Test.t7')/4
 testset = testTemp:view(-1,T*D)
 m = testset:size(1)
 
@@ -197,8 +197,6 @@ for i = 1 , num_iterations do
 		model:training()
 	end
 end
-
-torch.save('EMSTest.t7',model)		--s = sequence  e = epoch
 
 plotT = torch.Tensor(max_epochs)
 

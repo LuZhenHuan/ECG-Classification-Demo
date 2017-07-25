@@ -2,23 +2,29 @@ import torch
 import math
 import scipy.io as sci
 import torch.nn as nn
-import torchvision
 import torch.nn.functional as F
 from torch.autograd import Variable
+import torch.utils.data as Data
 
-N, T ,D= 60, 16, 250	#opt.batch_size, opt.seq_length , word_dim	
+N, T ,D= 60, 8, 500	#opt.batch_size, opt.seq_length , word_dim	
 
-train_temp = torch.from_numpy(sci.loadmat('/home/lu/code/pytorch/D1TrainCCDD.mat')['trainset']*0.0048).clone()
-trainset = train_temp.view(N,-1,T*D).transpose(0,1).clone()
-data_len = trainset.size()[0]
+trainset = torch.from_numpy(sci.loadmat('/home/lu/code/pytorch/D1TrainCCDD.mat')['trainset']*0.0048).clone()
+train_len = trainset.size()[0]
 
-y = torch.cuda.LongTensor(N)
+train_label = torch.cuda.LongTensor(train_len)
 for i in range(6):
-    y[i*10:(i+1)*10] = i
+    train_label[i*10800:(i+1)*10800] = i
+
+train_dataset = Data.TensorDataset(data_tensor=trainset, target_tensor=train_label)
+
+train_loader = Data.DataLoader(
+    dataset = train_dataset,
+    batch_size = N,
+    shuffle = True,
+)
 
 #process testdata and testlabel
-test_temp = torch.from_numpy(sci.loadmat('/home/lu/code/pytorch/D1TestCCDD.mat')['testset']*0.0048).clone()
-testset = test_temp.view(-1,1,4000).cuda()
+testset = torch.from_numpy(sci.loadmat('/home/lu/code/pytorch/D1TestCCDD.mat')['testset']*0.0048).clone()
 test_len = testset.size()[0]
 
 test_label = torch.cuda.LongTensor(7200)
@@ -26,20 +32,6 @@ for i in range(6):
     test_label[i*1200:(i+1)*1200] = i
 
 test_dataset = {'data':testset,'label':test_label}
-
-count = 0
-
-def read_data():
-    global count, trainset, y
-
-    x = trainset[count].view(N,T,D).transpose(0,1).clone()
-    x = x.type('torch.cuda.FloatTensor')
-
-    count +=  1
-    if(count == data_len):
-        count = 0
-
-    return Variable(x), Variable(y)
 
 ##################################################################
 # build a nerul network with nn.RNN
@@ -57,7 +49,7 @@ class RNN(nn.Module):
 
 ##################################################################
 # train loop
-model = RNN(250, 500, 6)
+model = RNN(D, 250, 6)
 model = model.cuda()
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -78,7 +70,6 @@ def test(input):
     input = input.type('torch.cuda.FloatTensor')
 
     output = model(input)
-    output = F.softmax(output)
     top_n, top_i = output.data.topk(1)
     
     return top_i[0][0]
@@ -87,40 +78,36 @@ def test(input):
 # let's train it
 
 n_epochs = 50
-print_every = data_len
 current_loss = 0
 all_losses = []
 err_rate = []
-err_sample = []
-test_label = []
 confusion = torch.zeros(6, 6)
 err = 0
 
-for epoch in range(1, data_len*n_epochs+1):
-    input, target = read_data()
-    output, loss = train(input, target)
-    current_loss += loss
+for epoch in range(1, n_epochs+1):
+    for step1,(batch_x, batch_y) in enumerate(train_loader):
+        batch_x = Variable(batch_x.type('torch.cuda.FloatTensor'))
+        batch_y = Variable(batch_y.type('torch.cuda.LongTensor'))
+        output, loss = train(batch_x.view(N,T,D).transpose(0,1), batch_y)
+        current_loss += loss
 
-    if epoch % print_every == 0:
-        print(math.floor(epoch / data_len), current_loss / print_every)
-        all_losses.append(current_loss / print_every)
-        current_loss = 0
-        
-        if epoch >= data_len*(n_epochs-4) :
-            for i in range(test_len):
-                guess = test(test_dataset['data'][i])
-                #print(guess)
-                if guess != test_dataset['label'][i]:
-                        err += 1
-                    
-                confusion[guess][test_dataset['label'][i]] += 1
-                confusion = torch.zeros(6, 6)
+    for i in range(test_len):
+        guess = test(test_dataset['data'][i])
+        #print(guess)
+        if guess != test_dataset['label'][i]:
+                err += 1
 
-            err_rate.append((1-err/test_len)*100)
+        if epoch == n_epochs:
+            confusion[guess][test_dataset['label'][i]] += 1    
 
-            print(err)
-            print((1-err/test_len)*100)
-            err = 0
+    all_losses.append(current_loss / step1+1)
+
+    err_rate.append((1-err/test_len)*100)
+
+    print('%d epoch: err numble = %d, err rate = %.2f%%'%(epoch, err, ((1-err/test_len)*100)))
+    
+    err = 0
+    current_loss
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker

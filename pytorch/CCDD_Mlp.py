@@ -9,7 +9,7 @@ import torch.utils.data as Data
 N, T ,D= 60, 5, 400	#opt.batch_size, opt.seq_length , word_dim	
 
 #process traindata and trainlabel
-train_temp = torch.from_numpy(sci.loadmat('/home/lu/code/pytorch/D1TrainCCDD.mat')['trainset']*0.0048).clone()
+train_temp = torch.from_numpy(sci.loadmat('/home/lu/code/MITcvNew/D1Train.mat')['trainset']).clone()
 
 train_label = torch.cuda.LongTensor(64800)
 for i in range(6):
@@ -17,9 +17,9 @@ for i in range(6):
 
 ecg_dataset = Data.TensorDataset(data_tensor=train_temp, target_tensor=train_label)
 
-loader = Data.DataLoader(
+train_loader = Data.DataLoader(
     dataset = ecg_dataset,
-    batch_size = 60,
+    batch_size = 64,
     shuffle = True,
 )
 
@@ -42,7 +42,8 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
         
         self.i2h = nn.Linear(input_size, hidden_szie)
-        self.h2o = nn.Linear(hidden_szie, output_size)
+        self.h2o = nn.Linear(hiddeimport scipy.io as sci
+n_szie, output_size)
 
     def forward(self, input):
         hidden = F.sigmoid(self.i2h(input))
@@ -57,6 +58,7 @@ model = model.cuda()
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.CrossEntropyLoss()
+import scipy.io as sci
 
 def train(input, label):
     optimizer.zero_grad()
@@ -80,7 +82,7 @@ def test(input):
 ##################################################################
 # let's train it
 
-n_epochs = 100
+n_epochs = 10
 current_loss = 0
 all_losses = []
 err_rate = []
@@ -88,7 +90,7 @@ err = 0
 confusion = torch.zeros(6, 6)
 
 for epoch in range(1, n_epochs):
-    for step,(batch_x, batch_y) in enumerate(loader):
+    for step,(batch_x, batch_y) in enumerate(train_loader):
         batch_x = Variable(batch_x.type('torch.cuda.FloatTensor'))
         batch_y = Variable(batch_y.type('torch.cuda.LongTensor'))
         output, loss = train(batch_x, batch_y)

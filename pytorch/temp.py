@@ -1,10 +1,3 @@
-import numpy
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+import scipy.io as sci
 
-confusion = numpy.random.rand(8,8)
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-cax = ax.matshow(confusion)
-fig.colorbar(cax)
+train_temp = torch.from_numpy(sci.loadmat('D1Train.mat'))
