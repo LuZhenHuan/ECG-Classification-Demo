@@ -248,6 +248,8 @@ def train(input_variable, target_variable, encoder, decoder, encoder_optimizer, 
             input_variable[ei], encoder_hidden)
         encoder_outputs[ei] = encoder_output[0][0]
 
+    print(encoder_outputs)
+    
     decoder_input = Variable(torch.LongTensor([[SOS_token]]))
     decoder_input = decoder_input.cuda() if use_cuda else decoder_input
 
