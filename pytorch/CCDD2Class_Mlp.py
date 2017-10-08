@@ -23,7 +23,7 @@ train_dataset = Data.TensorDataset(data_tensor=trainset, target_tensor=train_lab
 
 train_loader = Data.DataLoader(
     dataset = train_dataset,
-    batch_size = 64,
+    batch_size = N,
     shuffle = True,
 )
 

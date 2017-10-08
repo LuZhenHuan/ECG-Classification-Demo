@@ -97,7 +97,7 @@ for epoch in range(1, n_epochs+1):
         if guess != test_dataset['label'][i]:
                 err += 1
 
-        if epoch == n_epochs:
+        if epoch == n_epochs+1:
             confusion[guess][test_dataset['label'][i]] += 1    
 
     all_losses.append(current_loss / step1+1)

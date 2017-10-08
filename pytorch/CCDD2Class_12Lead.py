@@ -1,7 +1,9 @@
 import torch
 import math
+import numpy as np
 import scipy.io as sci
 import torch.nn as nn
+import h5py
 import torch.nn.functional as F
 from torch.autograd import Variable
 import torch.utils.data as Data
@@ -9,15 +11,19 @@ import torch.utils.data as Data
 torch.cuda.set_device(1)
 use_cuda = torch.cuda.is_available()
 
-N, T ,D= 50, 8, 500	#opt.batch_size, opt.seq_length , word_dim	
+N, T ,D ,L= 100, 8, 500 ,12	#batch_size, seq_length , word_dim	,leads
 
 #########################################################
-trainset = torch.from_numpy(sci.loadmat('/home/lu/code/pytorch/D1TrainCCDD.mat')['trainset']*0.0048).clone()
-train_len = trainset.size()[0]
+train_temp=torch.from_numpy(np.transpose(np.array(h5py.File('CCDD_12L2C1T1.mat')['trainset'])))
+trainset=train_temp*0.0048
 
-train_label = torch.cuda.LongTensor(train_len)
-for i in range(6):
-    train_label[i*10800:(i+1)*10800] = i
+train_len = trainset.size(0)
+
+train_label = torch.cuda.LongTensor(1000)
+for i in range(2):
+    train_label[i*500:(i+1)*500] = i
+
+train_label = torch.Tensor(1000, 1)
 
 train_dataset = Data.TensorDataset(data_tensor=trainset, target_tensor=train_label)
 
@@ -28,12 +34,13 @@ train_loader = Data.DataLoader(
 )
 
 #process testdata and testlabel
-testset = torch.from_numpy(sci.loadmat('/home/lu/code/pytorch/D1TestCCDD.mat')['testset']*0.0048).clone()
-test_len = testset.size()[0]
+test_temp=torch.from_numpy(np.transpose(np.array(h5py.File('/home/lu/code/pytorch/CCDD2Class.mat')['testset'])))
+testset=test_temp*0.0048
+test_len = testset.size(0)
 
-test_label = torch.cuda.LongTensor(7200)
-for i in range(6):
-    test_label[i*1200:(i+1)*1200] = i
+test_label = torch.cuda.LongTensor(12000)
+for i in range(2):
+    test_label[i*6000:(i+1)*6000] = i
 
 test_dataset = {'data':testset,'label':test_label}
 
@@ -58,7 +65,7 @@ class EncoderRNN(nn.Module):
         return output, hidden
 
 class AttnDecoderRNN(nn.Module):
-    def __init__(self, hidden_size, output_size, n_layers=1, dropout_p=0.1, max_length=T):
+    def __init__(self, hidden_size, output_size, n_layers=1, dropout_p=0.001, max_length=T):
         super(AttnDecoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size
@@ -73,13 +80,15 @@ class AttnDecoderRNN(nn.Module):
         self.out = nn.Linear(self.hidden_size, self.output_size)
 
     def forward(self, hidden, encoder_outputs):
-        
-        attn_weights = F.softmax(self.attn(hidden))
+
+        attn_weights = self.attn(hidden)
         attn_applied = torch.bmm(attn_weights.unsqueeze(1), encoder_outputs)
+        attn_applied = F.softmax(self.attn(attn_applied.squeeze(1)))
+        attn_applied = torch.bmm(attn_applied.unsqueeze(1), encoder_outputs)
         attn_applied = attn_applied.squeeze(1)
         #output = torch.cat((input[0], attn_applied[0]), 1)
         output = self.attn_combine(attn_applied)
-        output = F.sigmoid(output)
+        output = F.tanh(output)
         output = self.out(output)
         #output = F.log_softmax(self.out(output[0]))
         
@@ -92,8 +101,21 @@ def train(input_variable, target_variable, encoder, decoder, encoder_optimizer, 
     decoder_optimizer.zero_grad()
 
     loss = 0
+    
+    lead_output = Variable(torch.Tensor().type('torch.cuda.FloatTensor'))
 
-    encoder_outputs, encoder_hidden = encoder(input_variable)
+    for i in range(12):
+        input_part = input_variable[i].clone()
+        input_lead = input_part.view(N,T,D).transpose(0,1).clone()
+        encoder_outputs, encoder_hidden = encoder(input_lead)
+        decoder_hidden = encoder_hidden
+        decoder_output, decoder_hidden, attn_weights = decoder(decoder_hidden, encoder_outputs)
+
+        lead_output = Variable(torch.cat((lead_output.data,decoder_output.data),1))
+        print(lead_output)
+
+    decoder_output = decoder_output.view(N,L,D).transpose(0,1)
+    encoder_outputs, encoder_hidden = encoder(decoder_output)
     
     decoder_hidden = encoder_hidden
     
@@ -115,9 +137,8 @@ def test(input_variable, encoder, decoder):
 
     encoder_outputs, encoder_hidden = encoder(input_variable)
     
-    
     decoder_hidden = encoder_hidden
-    
+
     decoder_output, decoder_hidden, attn_weights = decoder(decoder_hidden, encoder_outputs)
     
     top_n, top_i = decoder_output.data.topk(1)
@@ -142,8 +163,7 @@ def trainIters(encoder, decoder, learning_rate=0.001):
         for step1,(batch_x, batch_y) in enumerate(train_loader):
             batch_x = Variable(batch_x.type('torch.cuda.FloatTensor'))
             batch_y = Variable(batch_y.type('torch.cuda.LongTensor'))
-
-            loss = train(batch_x.view(N,T,D).transpose(0,1), batch_y, encoder,
+            loss = train(batch_x.view(N,L,-1).transpose(0,1), batch_y, encoder,
                      decoder, encoder_optimizer, decoder_optimizer, criterion)
             
             current_loss += loss
