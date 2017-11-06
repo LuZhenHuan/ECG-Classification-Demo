@@ -59,7 +59,7 @@ print(train_len, val_len, test_len)
 class RNN(nn.Module):
     def __init__(self, input_size, hidden_szie, output_size):
         super(RNN, self).__init__() 
-        self.rnn = nn.LSTM(input_size, hidden_szie, 1, dropout = 0.5, bidirectional = True)
+        self.rnn = nn.LSTM(input_size, hidden_szie, 4, dropout = 0.2, bidirectional = True)
         self.h2o = nn.Linear(hidden_szie*2, output_size)
 
     def forward(self, input):
