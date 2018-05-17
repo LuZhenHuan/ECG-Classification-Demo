@@ -8,6 +8,7 @@ from torch.autograd import Variable
 import torch.utils.data as Data
 
 from torch.utils.serialization import load_lua
+torch.cuda.set_device(1)
 
 N, T ,D= 50, 1, 2000	#opt.batch_size, opt.seq_length , word_dim	
 
@@ -63,13 +64,14 @@ class MLP(nn.Module):
 model = MLP(D, 1000, 2)
 model = model.cuda()
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.CrossEntropyLoss()
 
 def train(input, label):
     optimizer.zero_grad()
     output = model(input)
     loss = criterion(output, label)
+    print(loss)
     loss.backward()
 
     optimizer.step()
@@ -87,7 +89,7 @@ def test(input):
 ##################################################################
 # let's train it
 
-n_epochs = 20
+n_epochs = 50
 print_every = data_len
 current_loss = 0
 all_losses = []
@@ -106,18 +108,18 @@ for epoch in range(1, n_epochs+1):
     for i in range(test_len):
         guess = test(test_dataset['data'][i])
         #print(guess)
-        if guess != test_dataset['label'][i]:
-                err += 1
-        if epoch == n_epochs:
-            confusion[guess][test_dataset['label'][i]] += 1
+        confusion[guess][test_dataset['label'][i]] += 1
     
-    all_losses.append(current_loss / step1)
-    current_loss = 0
-    err_rate.append((1-err/test_len)*100)
-    print('%d epoch: err numble = %d, err rate = %.2f%%'%(epoch, err, ((1-err/test_len)*100)))
-    err = 0   
+    sen = (confusion[0][0])/((confusion[0][0]+confusion[0][1]))
+    acc = (confusion[0][0]+confusion[1][1])/test_len
 
-print(confusion)
+    all_losses.append(current_loss / step1)
+    err_rate.append(acc*100)
+    
+    current_loss = 0
+    print('%d epoch: acc = %.2f, sen = %.2f%%'%(epoch, acc*100, sen*100))
+    err = 0   
+    confusion = torch.zeros(2,2)
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -130,9 +132,10 @@ plt.figure()
 plt.plot(err_rate)
 plt.title('err')
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
-cax = ax.matshow(confusion.numpy())
-fig.colorbar(cax)
-
 plt.show()
+
+RNN_loss = open('temp.csv', 'w+')
+for item in range(len(all_losses)):
+    RNN_loss.write(str(all_losses[item]) + '\n')
+
+RNN_loss.close()

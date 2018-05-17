@@ -42,8 +42,7 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
         
         self.i2h = nn.Linear(input_size, hidden_szie)
-        self.h2o = nn.Linear(hiddeimport scipy.io as sci
-n_szie, output_size)
+        self.h2o = nn.Linear(hidden_szie, output_size)
 
     def forward(self, input):
         hidden = F.sigmoid(self.i2h(input))
