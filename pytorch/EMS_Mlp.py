@@ -10,8 +10,10 @@ import torch.utils.data as Data
 from torch.utils.serialization import load_lua
 torch.cuda.set_device(1)
 
-N, T ,D= 50, 1, 2000	#opt.batch_size, opt.seq_length , word_dim	
+N, T ,D= 50, 1, 2000	#opt.batch_size, opt.seq_length , dimention	
 
+##################################################################
+#整理训练集和测试集
 train_temp = torch.from_numpy(sci.loadmat('/home/lu/code/MITcvNew/D9Train.mat')['trainset']).clone()
 train_temp = train_temp/4
 trainset = train_temp.view(-1,D)
