@@ -17,5 +17,5 @@ ECG Classification based on MLP RNN LSTM Attention-Model
 ** Multi-RNN TO do
 
 ## Conclusion
-ECG signals were classified using different depth learning models. And try to combine LSTM with CNN to process multi-lead sequence signals.
+ECG signals were classified using different deep learning models. And try to combine LSTM with CNN to process multi-lead sequence signals.
 The model performance is not particularly good, but I hope these idea will help you a little.
