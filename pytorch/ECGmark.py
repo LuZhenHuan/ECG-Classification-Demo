@@ -1,3 +1,5 @@
+#使用注意力模型挑出序列信号中较重要的一段
+
 import torch
 import math
 import numpy as np

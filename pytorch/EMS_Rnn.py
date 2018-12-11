@@ -1,6 +1,7 @@
 ##################################################################
 # prepare our data, we first to build a test dataset which is like 
 # the MIT ecg data. it is <5x1x400>
+#自己搭建简易rnn
 
 import torch
 import time

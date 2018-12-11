@@ -1,3 +1,4 @@
+#使用lstm分类mit数据
 import torch
 import math
 import torch.nn as nn

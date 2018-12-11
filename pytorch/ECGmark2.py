@@ -1,3 +1,4 @@
+#结合cnn与attention模型，并标注重要时间段
 import torch
 import math
 import numpy as np
