@@ -11,7 +11,7 @@ ECG Classification based on MLP RNN LSTM Attention-Model
 * EEG folder is a EEG classification model
 * other ECG model folder contains some simple models or some ideas for trying
 * 12-Lead ECG model is four deep learning model which build with pytorch
-** Vanilla-CNN is a simple CNN model to classify the CCDD database
+ * Vanilla-CNN is a simple CNN model to classify the CCDD database
 ** Channel-RNN To do
 ** Featrue-CNN To do
 ** Multi-RNN TO do
