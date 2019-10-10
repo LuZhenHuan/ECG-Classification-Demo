@@ -4,7 +4,7 @@ ECG Classification based on MLP RNN LSTM Attention-Model CNN
 ## Materials
 
 * MIT Arrythmia database and MIT Normal Sunis Database
-* CCDD database
+* CCDD database http://www.ecgdb.com
 
 ## Introduce
 * The DeHaze folder is a dehaze model of image
